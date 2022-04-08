@@ -32,12 +32,15 @@ function App() {
 
           <Route path='/' element={<Login />} />
 
-          {usedata?.uid && <Route path='/home' element={
-            <>
-              <Header></Header>
-              <Home></Home>
-            </>
-          } />}
+          {usedata?.uid &&
+            <Route path='/home' element={
+              <>
+                <Header></Header>
+                <Home></Home>
+              </>
+            } />
+
+          }
 
           <Route path="*" element={<Navigate to="/" />} />
 

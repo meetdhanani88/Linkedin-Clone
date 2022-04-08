@@ -5,18 +5,31 @@ import { useDispatch, useSelector } from "react-redux";
 import { articleStateAction } from '../store/articleStateSlice';
 import PostalModal from "./PostalModal";
 import ReactPlayer from 'react-player';
+import LikeCommentModal from './LikeCommentModal';
 
 
 function Main() {
+	//Normal page State
 	const [showModal, setshowModal] = useState(false)
+	const [showcmt, setshowcmt] = useState({ id: "", isshow: false });
+	const [showLikeCmtmodal, setshowLikecmtmodal] = useState(false);
+	const [clickedpostdata, setclickedpostdata] = useState({ postid: "", postindex: "" });
+
+	const [isLikesection, setisLikesection] = useState(false);
+	const [iscmtsection, setiscmtsection] = useState(false);
+
+
+
+	//Redux Store Values
 	const usedata = useSelector(state => state.userState.user)
 	const loading = useSelector(state => state.loadingState.loading);
 	const articles = useSelector(state => state.articleState.articles);
 	const id = useSelector(state => state.articleState.ids);
+
+	//dispatch
 	const dispatch = useDispatch();
 
-
-
+	console.log("usedata", usedata)
 	useEffect(() => {
 		// console.log("useeffect run");
 		function getArticlesAPI() {
@@ -45,6 +58,11 @@ function Main() {
 
 	}, [])
 
+	function resetState() {
+		setisLikesection(false);
+		setiscmtsection(false);
+	}
+
 	function Modalhandler() {
 		setshowModal(true);
 	}
@@ -63,8 +81,14 @@ function Main() {
 		// console.log(articles);
 		let currentLikes = articles[postindex].likes.count
 		let whoLiked = articles[postindex].likes.whoLiked;
-		let useremail = usedata.email;
-		let userIndex = whoLiked.indexOf(useremail);
+
+		let useremail = { email: usedata.email, name: usedata.displayName, image: usedata.photoURL };
+
+		let userIndex = whoLiked.findIndex(element => {
+			if (element.email === useremail.email) {
+				return true;
+			}
+		});
 
 		// console.log(event, currentLikes, postid, postindex, whoLiked, useremail, userIndex);
 
@@ -82,6 +106,7 @@ function Main() {
 			// whoLiked.push(useremail);
 			whoLiked = [...whoLiked, useremail]
 		}
+
 		const payload = {
 			update: {
 				likes: {
@@ -94,9 +119,59 @@ function Main() {
 		updateArticleAPI(payload)
 
 	}
+	function commenthandeler(e, postid, postindex) {
+		e.preventDefault();
+
+		setshowcmt((pre) => {
+
+			if (pre?.id == postid) {
+				return {
+					id: postid,
+					isshow: !pre?.isshow
+				}
+			}
+			else {
+				return {
+					id: postid,
+					isshow: true
+				}
+			}
+
+
+		});
+
+	}
+
+
+	function likecmtmodalhandler(event, postid, postindex, setsection) {
+		event.preventDefault();
+		console.log("event,postid,postindex", event, postid, postindex);
+
+		//Show modal
+		setshowLikecmtmodal(true);
+		setclickedpostdata({ postid: postid, postindex: postindex })
+
+		//Reset old state
+		resetState();
+
+		//Show modal with clicked section
+		setsection(true);
+
+	}
+
+
 
 	return (
 		<Container>
+
+			{showLikeCmtmodal &&
+				<LikeCommentModal
+					setshowLikecmtmodal={setshowLikecmtmodal}
+					clickedpostdata={clickedpostdata}
+					isLiksection={isLikesection}
+					iscmsection={iscmtsection}
+				/>
+			}
 
 			<ShareBox>
 
@@ -129,15 +204,16 @@ function Main() {
 
 			</ShareBox>
 
-
-
 			<Content>
 				{loading && <img src="/images/spin.gif" alt="" />}
 
-
-
 				{articles.map((article, index) => {
+					//Date Object TO Real Date
 					const date = (new Date(article.actor.date.seconds * 1000 + article.actor.date.nanoseconds / 1000000)).toLocaleDateString();
+					// Dynamic Like button class
+					const btnclass = `${article.likes.whoLiked.findIndex((ele) =>
+						ele.email === usedata.email
+					) >= 0 ? "active" : null}`
 
 					return (<Article key={id[index]}>
 						<SharedActor>
@@ -160,26 +236,36 @@ function Main() {
 								{(article?.sharedImg && !article.video) ? <img src={article?.sharedImg} alt="" /> : <ReactPlayer width={"100%"} url={article.video}></ReactPlayer>}
 							</a>
 						</SharedImage>}
-						<SocialCount>
-							<li>
+
+
+
+
+						<SocialCount >
+							<li onClick={(e) => likecmtmodalhandler(e, id[index], index, setisLikesection)}>
 								<button>
 									<img src="https://static-exp1.licdn.com/sc/h/d310t2g24pvdy4pt1jkedo4yb" alt="like" />
 									<span>{article.likes.count}</span>
 								</button>
 							</li>
-							{/* <li>
-								<a>2 Comments</a>
-							</li> */}
+							<li onClick={(e) => likecmtmodalhandler(e, id[index], index, setiscmtsection)}>
+								<a>0 Comments</a>
+							</li>
 						</SocialCount>
 
+
+
+
+
+
+
 						<SocialActions>
-							<button onClick={(event) => likehandeler(event, id[index], index)} className={`${article.likes.whoLiked.indexOf(usedata.email) >= 0 ? "active" : null}`}>
+							<button onClick={(event) => likehandeler(event, id[index], index)} className={btnclass}>
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" data-supported-dps="24x24" fill="rgba(0, 0, 0, 0.6)" width="24" height="24" focusable="false">
 									<path d="M19.46 11l-3.91-3.91a7 7 0 01-1.69-2.74l-.49-1.47A2.76 2.76 0 0010.76 1 2.75 2.75 0 008 3.74v1.12a9.19 9.19 0 00.46 2.85L8.89 9H4.12A2.12 2.12 0 002 11.12a2.16 2.16 0 00.92 1.76A2.11 2.11 0 002 14.62a2.14 2.14 0 001.28 2 2 2 0 00-.28 1 2.12 2.12 0 002 2.12v.14A2.12 2.12 0 007.12 22h7.49a8.08 8.08 0 003.58-.84l.31-.16H21V11zM19 19h-1l-.73.37a6.14 6.14 0 01-2.69.63H7.72a1 1 0 01-1-.72l-.25-.87-.85-.41A1 1 0 015 17l.17-1-.76-.74A1 1 0 014.27 14l.66-1.09-.73-1.1a.49.49 0 01.08-.7.48.48 0 01.34-.11h7.05l-1.31-3.92A7 7 0 0110 4.86V3.75a.77.77 0 01.75-.75.75.75 0 01.71.51L12 5a9 9 0 002.13 3.5l4.5 4.5H19z"></path>
 								</svg>
 								<span>Like</span>
 							</button>
-							<button>
+							<button onClick={(e) => commenthandeler(e, id[index], index)}>
 								<img src="/images/comment-icon.svg" alt="" />
 								<span>Comment</span>
 							</button>
@@ -193,6 +279,31 @@ function Main() {
 							</button>
 						</SocialActions>
 
+						{/* comments */}
+
+						{(showcmt?.id === id[index]) && (showcmt?.isshow == true) && <Comment>
+							<Writecomment>
+								<form action="">
+									<Commnetinput>
+										<Commentimg>
+											<img src={usedata.photoURL} alt="" />
+										</Commentimg>
+
+										<textarea placeholder='Write any comment' autoFocus={true}></textarea>
+
+										<Postcomment>
+											<button type='submit'>Post</button>
+										</Postcomment>
+
+									</Commnetinput>
+								</form>
+
+
+							</Writecomment>
+
+						</Comment>}
+
+
 					</Article>)
 				})}
 
@@ -200,7 +311,7 @@ function Main() {
 			</Content>
 
 			<PostalModal showModal={showModal} setshowModal={setshowModal} ></PostalModal>
-		</Container >
+		</Container>
 	)
 }
 
@@ -278,6 +389,7 @@ const Content = styled.div`
 
 const Article = styled(CommonBox)`
 	padding: 0;
+	padding-bottom: 20px;
 	margin: 0 0 8px;
 	overflow: visible;
 `;
@@ -355,17 +467,35 @@ const SocialCount = styled.ul`
 	border-bottom: 1px solid #e9efdf;
 	color: rgba(0, 0, 0, 0.6);
 	list-style: none;
+	
+
 	li {
 		margin-right: 5px;
 		font-size: 12px;
+		
+		&:hover{
+		cursor: pointer;
+		text-decoration: underline;
+		
+	     }
+
 		button {
 			display: flex;
 			border: none;
 			color: rgba(0, 0, 0, 0.6);
 			background: transparent;
+			&:hover{
+		       cursor: pointer;
+			   text-decoration: underline;
+		
+	     }
+	
 			span {
 				padding-left: 5px;
+		
 			}
+
+		
 		}
 	}
 `;
@@ -376,6 +506,7 @@ const SocialActions = styled.div`
 	margin: 4px 12px;
 	min-height: 40px;
 	padding-bottom: 5px;
+	/* border-bottom: 1px solid black; */
 	button {
 		display: inline-flex;
 		align-items: center;
@@ -399,8 +530,90 @@ const SocialActions = styled.div`
 	}
 `;
 
-const Spinner = styled.div`
-/* width: 100%;
-height: 100%; */
+const Comment = styled.div`
+display:flex;
+flex-direction: column;
+border-radius: 25px;
+box-shadow: 0px 0px 5px 5px #cdcbca;
+width: 90%;
+margin-left: 5%;
+animation: mymove 1s ease;
+@keyframes mymove {
+  from {opacity: 0;}
+  to {opacity: 1;}
+}
+
 `;
-export default Main
+
+const Writecomment = styled.div`
+display: flex;
+align-items: flex-end;
+/* border-bottom: 2px solid black; */
+form{
+	width: 100%;
+}
+
+`;
+const Commentimg = styled.div`
+	text-align: center;
+	display: flex;
+	justify-content: center;
+
+img{
+	height: 40px;
+    width: 40px;
+	border-radius: 50%;
+	margin-left: 10px;
+	margin-right: 5px;
+    margin-top: -2px;
+
+}
+
+`;
+const Commnetinput = styled.div`
+margin-top: 10px;
+width: 100%;
+/* border: 2px solid red; */
+display: flex;
+flex-direction: row;
+
+textarea{
+	    width:80%;
+		min-height: 10px;
+		height: auto;
+		resize: none;
+		overflow: hidden;
+		font-size: 20px;
+  		font: inherit;
+		padding: 5px 10px;
+		  border:none;
+		  outline: none; 
+}
+
+`;
+const Postcomment = styled.div`
+
+justify-content: center;
+/* border: 1px solid yellow; */
+display: flex;
+background-color: transparent;
+button{
+ border: none;
+  background-color: inherit;
+  padding: 14px 28px;
+  font-size: 16px;
+  cursor: pointer;
+  display: inline-block;
+  &:hover{
+	  color: blue;
+  }
+
+}
+`;
+
+
+
+
+
+
+export default Main;
