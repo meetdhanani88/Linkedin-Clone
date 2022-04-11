@@ -160,7 +160,7 @@ function Main() {
 		setclickedpostdata({ postid: postid, postindex: postindex })
 		resetState();
 		setiscmtsection(true);
-
+		//timeout
 		setTimeout(() => {
 			setshowLikecmtmodal(true);
 		}, 200);
