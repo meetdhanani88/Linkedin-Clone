@@ -60,8 +60,13 @@ function PostalModal(props) {
                             likes: {
                                 count: 0,
                                 whoLiked: [],
+
                             },
-                            comments: 0,
+                            comments: {
+                                count: 0,
+                                whoWhatComment: [],
+
+                            },
                             description: payload.description,
                         });
                     dispatch(loadingStateAction.Setloading(false));
@@ -85,7 +90,11 @@ function PostalModal(props) {
                     count: 0,
                     whoLiked: [],
                 },
-                comments: 0,
+                comments: {
+                    count: 0,
+                    whoWhatComment: [],
+
+                },
                 description: payload.description,
             })
             dispatch(loadingStateAction.Setloading(false));
@@ -108,7 +117,11 @@ function PostalModal(props) {
                     count: 0,
                     whoLiked: [],
                 },
-                comments: 0,
+                comments: {
+                    count: 0,
+                    whoWhatComment: [],
+
+                },
                 description: payload.description,
             });
             dispatch(loadingStateAction.Setloading(false));
@@ -119,7 +132,7 @@ function PostalModal(props) {
 
     function postArticle(event) {
         event.preventDefault();
-        props.setshowModal(false);
+
 
         if (event.target !== event.currentTarget) {
             return;
@@ -133,7 +146,12 @@ function PostalModal(props) {
             timestamp: Firebase.firestore.Timestamp.now(),
         };
 
+        setTextval("");
+
         postArticleAPI(payload);
+        props.setshowModal(false);
+
+
 
     }
 
@@ -219,6 +237,7 @@ const Container = styled.div`
 	z-index: 11;
 	background-color: rgba(0, 0, 0, 0.8);
 	animation: fadeIn 0.5s ease;
+
 `;
 
 const Content = styled.div`
@@ -233,6 +252,7 @@ const Content = styled.div`
 	flex-direction: column;
 	top: 60px;
 	margin: 0 auto;
+    overflow-y: auto;
 `;
 
 const Header = styled.div`
@@ -266,7 +286,7 @@ const SharedContent = styled.div`
 	display: flex;
 	flex-direction: column;
 	flex-grow: 1;
-	overflow-y: auto;
+	overflow-y: scroll;
 	vertical-align: baseline;
 	background: transparent;
 	padding: 5px 12px;

@@ -3,80 +3,106 @@ import styled from "styled-components";
 import { useDispatch, useSelector } from "react-redux";
 
 function LikeCommentModal({ setshowLikecmtmodal, clickedpostdata, isLiksection, iscmsection }) {
-    const articles = useSelector(state => state.articleState.articles);
+	const articles = useSelector(state => state.articleState.articles);
 
-    const [isLikesection, setisLikesection] = useState(isLiksection);
-    const [iscmtsection, setiscmtsection] = useState(iscmsection);
+	const [isLikesection, setisLikesection] = useState(isLiksection);
+	const [iscmtsection, setiscmtsection] = useState(iscmsection);
 
-    const clickearticle = articles.filter((_, index) => clickedpostdata.postindex == index);
-    // console.log(clickearticle);
-    const wholike = clickearticle[0].likes.whoLiked;
-
-    // console.log(wholike)
-    function resetallstate() {
-        setshowLikecmtmodal(false);
-        setisLikesection(false);
-        setiscmtsection(false)
-    }
-    return (
-        <Container>
-            <Content>
-                <Header>
-                    <div>
-                        <span onClick={() => { setisLikesection(true); setiscmtsection(false) }} >
-                            <img src="/images/Like-icon.svg" alt="" />
-                            <p>Likes</p>
-                        </span>
-
-                        <span onClick={() => { setisLikesection(false); setiscmtsection(true) }}>
-                            <img src="/images/comment-icon.svg" alt="" />
-                            <p>Comments</p>
-                        </span>
-                    </div>
-
-                    <button onClick={() => { resetallstate() }}>
-                        <img src="/images/close-icon.svg" alt="" />
-                    </button>
-                </Header>
-
-                {isLikesection &&
-                    <LikeSection>
-                        <SocialCount>
-                            <li>
-                                <button>
-                                    <img src="https://static-exp1.licdn.com/sc/h/d310t2g24pvdy4pt1jkedo4yb" alt="like" />
-                                    <span>{wholike.length}</span>
-                                </button>
-                            </li>
-                        </SocialCount>
-
-                        {wholike.map((item, index) => {
-
-                            return (<SharedActor key={index}>
-                                <a>
-                                    <img src={item.image} alt="" />
-                                    <div>
-                                        <span>{item.name}</span>
-                                        <span>{item.email}</span>
-                                    </div>
-                                </a>
-
-                            </SharedActor>)
-
-                        })}
+	const clickearticle = articles.filter((_, index) => index == clickedpostdata.postindex);
+	// console.log(clickearticle);
+	const wholike = clickearticle[0].likes.whoLiked;
+	const whoWhatComment = clickearticle[0].comments.whoWhatComment;
 
 
-                    </LikeSection>
-                }
+	// console.log("wholike,whoWhatcomment", wholike, whoWhatcomment)
 
-                {iscmtsection && <Commentsection>
-                    <div>Comment section will be here soon</div>
-                </Commentsection>}
+	function resetallstate() {
+		setshowLikecmtmodal(false);
+		setisLikesection(false);
+		setiscmtsection(false)
+	}
+	return (
+		<Container>
+			<Content>
+				<Header>
+					<div>
+						<span onClick={() => { setisLikesection(true); setiscmtsection(false) }} >
+							<img src="/images/like-icon.svg" alt="" />
+							<p>Likes</p>
+						</span>
+
+						<span onClick={() => { setisLikesection(false); setiscmtsection(true) }}>
+							<img src="/images/comment-icon.svg" alt="" />
+							<p>Comments</p>
+						</span>
+					</div>
+
+					<button onClick={() => { resetallstate() }}>
+						<img src="/images/close-icon.svg" alt="" />
+					</button>
+				</Header>
+
+				{isLikesection &&
+					<LikeSection>
+						<SocialCount>
+							<li>
+								<button>
+									<img src="https://static-exp1.licdn.com/sc/h/d310t2g24pvdy4pt1jkedo4yb" alt="like" />
+									<span>{wholike.length} Likes</span>
+								</button>
+							</li>
+						</SocialCount>
+
+						{wholike?.map((item, index) => {
+
+							return (<SharedActor key={index}>
+								<a>
+									<img src={item.image} alt="" />
+									<div>
+										<span>{item.name}</span>
+										<span>{item.email}</span>
+									</div>
+								</a>
+
+							</SharedActor>)
+
+						})}
 
 
-            </Content>
-        </Container >
-    )
+					</LikeSection>
+				}
+
+				{iscmtsection && <Commentsection>
+					<SocialCount>
+						<li>
+							<button>
+								<img src="https://img.icons8.com/cute-clipart/16/000000/comments.png" />
+								<span>{whoWhatComment.length} Comments</span>
+							</button>
+						</li>
+					</SocialCount>
+
+					{whoWhatComment.map((item, index) => {
+
+						return (<SharedActorComment key={index}>
+							<a>
+								<img src={item.image} alt="" />
+								<div>
+									<span>{item.name}</span>
+									<span>{item.cmt}</span>
+								</div>
+							</a>
+
+						</SharedActorComment>)
+
+					})}
+
+				</Commentsection>}
+
+
+			</Content>
+		</Container >
+	)
 }
 
 const Container = styled.div`
@@ -88,21 +114,24 @@ const Container = styled.div`
 	z-index: 11;
 	background-color: rgba(0, 0, 0, 0.8);
 	animation: fadeIn 0.5s ease;
+	
 `;
 
 const Content = styled.div`
-	width: 100%;
+	width:100%;
 	max-width: 552px;
 	max-height: 90%;
 	background-color: #fff;
-	overflow: initial;
-	border-radius: 5px;
+
+
 	position: relative;
 	display: flex;
 	flex-direction: column;
-	top: 60px;
     padding-bottom: 15px;
-	margin: 0 auto;
+	margin: 25px auto;
+	overflow: auto;
+	padding:6px 0px;
+
 `;
 
 const Header = styled.div`
@@ -199,10 +228,13 @@ const SharedActor = styled.div`
 	margin-bottom: 8px;
 	display: flex;
 	align-items: center;
+	
+	
 	a {
 		margin-right: 12px;
 		flex-grow: 1;
-		overflow: hidden;
+		/* overflow: hidden; */
+		/* overflow: scroll; */
 		display: flex;
 		img {
 			width: 35px;
@@ -224,6 +256,7 @@ const SharedActor = styled.div`
 					color: #000;
 				}
 				&:nth-child(n + 2) {
+				
 					font-size: 12px;
 					color: rgba(0, 0, 0, 0.6);
 				}
@@ -239,7 +272,33 @@ const SharedActor = styled.div`
 		background: transparent;
 	}
 `;
+const SharedActorComment = styled(SharedActor)`
+a{
+	img{
+		margin-top:8px;
+		height: 30px;
+		width: 30px;
+	}
+	&>div{
+		background-color: #f1f1f1;
+		border-radius: 10px;
+	     padding: 10px 15px;
+		 display: flex;
+		span{
+			&:first-child{
+				
+				font-weight: 500;
+			}
+			&:nth-child(n + 2) {
+					font-size: 16px;
+					color: rgba(0, 0, 0, 0.7);
+					font-weight: 300;
 
+				    word-wrap: break-word;
+				}
+		}
+	}
+}`;
 
 const Commentsection = styled.div``;
 export default LikeCommentModal

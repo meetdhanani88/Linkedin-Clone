@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, {
+	useState, useEffect, useRef
+} from 'react';
 import db, { auth, provider, storage } from "../firebase";
 import styled from "styled-components";
 import { useDispatch, useSelector } from "react-redux";
@@ -12,13 +14,17 @@ function Main() {
 	//Normal page State
 	const [showModal, setshowModal] = useState(false)
 	const [showcmt, setshowcmt] = useState({ id: "", isshow: false });
-	const [showLikeCmtmodal, setshowLikecmtmodal] = useState(false);
 	const [clickedpostdata, setclickedpostdata] = useState({ postid: "", postindex: "" });
+	const comment = useRef();
 
+	//Like&Comments modal  State
+	const [showLikeCmtmodal, setshowLikecmtmodal] = useState(false);
 	const [isLikesection, setisLikesection] = useState(false);
 	const [iscmtsection, setiscmtsection] = useState(false);
 
+	//poststate 
 
+	const [posthandel, setposthandel] = useState({ id: "", isshow: false });
 
 	//Redux Store Values
 	const usedata = useSelector(state => state.userState.user)
@@ -42,7 +48,7 @@ function Main() {
 					// console.log("useeffect run");
 					payload = snapshot.docs.map((doc) => doc.data());
 					payload = JSON.parse(JSON.stringify(payload))
-					// console.log(payload);
+					console.log(payload);
 					id = snapshot.docs.map((doc) => doc.id);
 					// console.log(id);
 					dispatch(articleStateAction.GET_ARTICLES({ articles: payload, ids: id }))
@@ -119,22 +125,59 @@ function Main() {
 		updateArticleAPI(payload)
 
 	}
+
+
+	function CommentpostHandeler(event, postid, postindex) {
+		event.preventDefault();
+		let postcomment = comment.current['cmt'].value;
+		// console.log(postcomment);
+		console.log("postid, postindex,postcomment", postid, postindex, postcomment);
+
+		let currentcmt = articles[postindex].comments.count;
+		let whoWhatComment = articles[postindex].comments.whoWhatComment;
+
+		let newcmt = { name: usedata.displayName, image: usedata.photoURL, cmt: postcomment }
+
+
+		console.log("currentcmt,whoWhatComment,newcmt,articles[postindex]", currentcmt, whoWhatComment, newcmt, articles[postindex]);
+
+
+		currentcmt++;
+		whoWhatComment = [...whoWhatComment, newcmt];
+
+		const payload = {
+			update: {
+				comments: {
+					count: currentcmt,
+					whoWhatComment: whoWhatComment,
+				},
+			},
+			id: postid,
+		}
+		updateArticleAPI(payload);
+
+		comment.current['cmt'].value = "";
+		setclickedpostdata({ postid: postid, postindex: postindex })
+		setiscmtsection(true);
+
+		setTimeout(() => {
+			setshowLikecmtmodal(true);
+		}, 200);
+
+
+	}
+
 	function commenthandeler(e, postid, postindex) {
 		e.preventDefault();
 
 		setshowcmt((pre) => {
 
-			if (pre?.id == postid) {
-				return {
-					id: postid,
-					isshow: !pre?.isshow
-				}
-			}
-			else {
-				return {
-					id: postid,
-					isshow: true
-				}
+			return (pre?.id == postid) ? {
+				id: postid,
+				isshow: !pre?.isshow
+			} : {
+				id: postid,
+				isshow: true
 			}
 
 
@@ -159,6 +202,40 @@ function Main() {
 
 	}
 
+
+	function updatepost(postid) {
+		setposthandel((pre) => {
+
+			if (pre?.id == postid) {
+				return {
+					id: postid,
+					isshow: !pre?.isshow
+				}
+			}
+			else {
+				return {
+					id: postid,
+					isshow: true
+				}
+			}
+
+		});
+		// db.collection("articles").doc(postid).delete();
+	}
+	function deletepost(postid) {
+		db.collection("articles").doc(postid).delete();
+		setposthandel((pre) => {
+
+			return (pre?.id == postid) ? {
+				id: postid,
+				isshow: !pre?.isshow
+			} : {
+				id: postid,
+				isshow: true
+			}
+
+		});
+	}
 
 
 	return (
@@ -225,9 +302,22 @@ function Main() {
 									<span>{date}</span>
 								</div>
 							</a>
-							<button>
+							<button onClick={() => updatepost(id[index])}>
 								<img src="/images/ellipses.svg" alt="" />
+
+								{(posthandel?.id === id[index]) && (posthandel?.isshow == true) && <>
+									<div onClick={() => deletepost(id[index])}>
+										<span>Delete</span>
+									</div>
+									<div>
+										<span>Edit</span>
+									</div>
+								</>}
+
+
 							</button>
+
+
 						</SharedActor>
 						<Description>{article.description}</Description>
 
@@ -244,19 +334,17 @@ function Main() {
 							<li onClick={(e) => likecmtmodalhandler(e, id[index], index, setisLikesection)}>
 								<button>
 									<img src="https://static-exp1.licdn.com/sc/h/d310t2g24pvdy4pt1jkedo4yb" alt="like" />
-									<span>{article.likes.count}</span>
+									<span>{article.likes.count} Likes</span>
 								</button>
 							</li>
 							<li onClick={(e) => likecmtmodalhandler(e, id[index], index, setiscmtsection)}>
-								<a>0 Comments</a>
+								<button>
+									<img src="https://img.icons8.com/cute-clipart/16/000000/comments.png" />
+									<span>{article.comments.count} Comments</span>
+								</button>
+
 							</li>
 						</SocialCount>
-
-
-
-
-
-
 
 						<SocialActions>
 							<button onClick={(event) => likehandeler(event, id[index], index)} className={btnclass}>
@@ -283,13 +371,13 @@ function Main() {
 
 						{(showcmt?.id === id[index]) && (showcmt?.isshow == true) && <Comment>
 							<Writecomment>
-								<form action="">
+								<form onSubmit={(event) => CommentpostHandeler(event, id[index], index)} ref={comment}>
 									<Commnetinput>
 										<Commentimg>
 											<img src={usedata.photoURL} alt="" />
 										</Commentimg>
 
-										<textarea placeholder='Write any comment' autoFocus={true}></textarea>
+										<textarea placeholder='Write any comment' autoFocus={true} name={'cmt'} ></textarea>
 
 										<Postcomment>
 											<button type='submit'>Post</button>
@@ -439,6 +527,31 @@ const SharedActor = styled.div`
 		border: none;
 		outline: none;
 		background: transparent;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+        align-items: center;
+	
+		div{
+		width: 65px;
+		height: 30px;
+		/* border: 1px solid red; */
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		text-align: center;
+		margin-bottom: 5px;
+		border-radius: 20%;
+		&:hover{
+			background-color: #e4dede;
+			text-decoration: underline;
+			cursor: pointer;
+		}
+	
+		span{
+			padding: 5px;
+		}
+		}
 	}
 `;
 
@@ -585,9 +698,9 @@ textarea{
 		overflow: hidden;
 		font-size: 20px;
   		font: inherit;
-		padding: 5px 10px;
-		  border:none;
-		  outline: none; 
+		padding: 0px 10px;
+		border:none;
+		outline: none;
 }
 
 `;
