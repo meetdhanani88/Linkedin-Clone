@@ -158,6 +158,7 @@ function Main() {
 
 		comment.current['cmt'].value = "";
 		setclickedpostdata({ postid: postid, postindex: postindex })
+		resetState();
 		setiscmtsection(true);
 
 		setTimeout(() => {
@@ -326,9 +327,6 @@ function Main() {
 								{(article?.sharedImg && !article.video) ? <img src={article?.sharedImg} alt="" /> : <ReactPlayer width={"100%"} url={article.video}></ReactPlayer>}
 							</a>
 						</SharedImage>}
-
-
-
 
 						<SocialCount >
 							<li onClick={(e) => likecmtmodalhandler(e, id[index], index, setisLikesection)}>
