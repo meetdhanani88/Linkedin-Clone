@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from "styled-components";
 import { useDispatch, useSelector } from "react-redux";
 import ReactPlayer from "react-player";
@@ -6,22 +6,73 @@ import db, { storage } from "../firebase";
 import Firebase from "firebase/app";
 import { loadingStateAction } from '../store/loadingStateSlice';
 
+function Editpost(props) {
+    const user = useSelector(state => state.userState.user);
+    const dispatch = useDispatch();
+    const articles = useSelector(state => state.articleState.articles);
 
-
-
-
-function PostalModal(props) {
     const [Textval, setTextval] = useState("");
     const [imageFile, setImageFile] = useState("");
     const [videoFile, setVideoFile] = useState("");
+    const [uplodedimg, setuploadedimg] = useState("")
     const [Showimage, setShowimage] = useState(false);
     const [Showvideo, setShowvideo] = useState(false);
 
-    const user = useSelector(state => state.userState.user);
-    const dispatch = useDispatch();
+    // console.log(editposttext);
+    console.log("Showimage,Showvideo,props.showModal", Showimage, Showvideo, props.showModal);
 
+
+    const editposttext = articles[props.editpostDetail.postindex]?.description;
+    const editpostvideo = articles[props.editpostDetail.postindex]?.video;
+    const editpostimage = articles[props.editpostDetail.postindex]?.sharedImg;
+    const editpostid = props.editpostDetail.postid;
+    console.log("editpostid", editpostid);
+
+
+    useEffect(() => {
+
+        if (editposttext && editpostvideo) {
+            setShowvideo(true);
+            setVideoFile(editpostvideo);
+            setTextval(editposttext);
+            setShowimage(false);
+        }
+        if (editposttext && !editpostvideo && !editpostimage) {
+            setTextval(editposttext);
+            setShowimage(false);
+            setShowvideo(false);
+            setVideoFile("")
+        }
+        if (editposttext && editpostimage) {
+            setTextval(editposttext);
+            setuploadedimg(editpostimage);
+            setShowimage(true);
+            setShowvideo(false);
+        }
+    }, [editposttext, editpostvideo, editpostimage])
+
+    // console.log("editposttext,editpostvideo,editpostimage", editposttext, editpostvideo, editpostimage);
+
+    // console.log("editposttext", editposttext);
+    // console.log("articles[props.editpostDetail.postindex]", articles[props.editpostDetail.postindex]);
+    function updateArticleAPI(payload) {
+        db.collection("articles").doc(payload.id).update(payload.update);
+    }
+
+    function imagebunhandler() {
+        // props.setshowModal(false);
+
+        setShowvideo(false);
+        setVideoFile("");
+        setShowimage(true)
+
+    }
     function Modalhandler() {
         props.setshowModal(false);
+        setTextval("");
+        setImageFile("");
+        setVideoFile("");
+
     }
     function handleImage(event) {
         let image = event.target.files[0];
@@ -33,11 +84,18 @@ function PostalModal(props) {
         setImageFile(image);
     }
 
-    function postArticleAPI(payload) {
 
-        if (payload.image !== "") {
+
+    function postArticle(event) {
+        event.preventDefault();
+
+        if (event.target !== event.currentTarget) {
+            return;
+        }
+
+        if (imageFile && !videoFile) {
             dispatch(loadingStateAction.Setloading(true));
-            const upload = storage.ref(`images/${payload.image.name}`).put(payload.image);
+            const upload = storage.ref(`images/${imageFile.name}`).put(imageFile);
             upload.on(
                 "state_changed",
                 (snapshot) => {
@@ -47,111 +105,66 @@ function PostalModal(props) {
                 (err) => alert(err),
                 async () => {
                     const downloadURL = await upload.snapshot.ref.getDownloadURL();
-                    db.collection("articles").add(
-                        {
-                            actor: {
-                                description: payload.user.email,
-                                title: payload.user.displayName,
-                                date: payload.timestamp,
-                                image: payload.user.photoURL,
-                            },
-                            video: payload.video,
+
+                    const payload = {
+                        update: {
+                            description: Textval,
                             sharedImg: downloadURL,
-                            likes: {
-                                count: 0,
-                                whoLiked: [],
+                            video: ""
+                        },
+                        id: editpostid,
+                    }
 
-                            },
-                            comments: {
-                                count: 0,
-                                whoWhatComment: [],
-
-                            },
-                            description: payload.description,
-                        });
+                    updateArticleAPI(payload);
                     dispatch(loadingStateAction.Setloading(false));
                 }
             );
 
-        }
 
-        else if (payload.video) {
-            dispatch(loadingStateAction.Setloading(true));
-            db.collection("articles").add({
-                actor: {
-                    description: payload.user.email,
-                    title: payload.user.displayName,
-                    date: payload.timestamp,
-                    image: payload.user.photoURL,
-                },
-                video: payload.video,
-                sharedImg: "",
-                likes: {
-                    count: 0,
-                    whoLiked: [],
-                },
-                comments: {
-                    count: 0,
-                    whoWhatComment: [],
 
-                },
-                description: payload.description,
-            })
-            dispatch(loadingStateAction.Setloading(false));
+
+
+
+
+
+
 
 
         }
 
-        else if (payload.image === "" && payload.video === "") {
-            dispatch(loadingStateAction.Setloading(true));
-            db.collection("articles").add({
-                actor: {
-                    description: payload.user.email,
-                    title: payload.user.displayName,
-                    date: payload.timestamp,
-                    image: payload.user.photoURL,
+        if (!imageFile && videoFile) {
+            const payload = {
+                update: {
+                    description: Textval,
+                    video: videoFile,
+                    sharedImg: "",
                 },
-                video: "",
-                sharedImg: "",
-                likes: {
-                    count: 0,
-                    whoLiked: [],
-                },
-                comments: {
-                    count: 0,
-                    whoWhatComment: [],
+                id: editpostid,
+            }
+            updateArticleAPI(payload);
+        }
+        if (!imageFile && !videoFile && Textval) {
+
+            const payload = {
+                update: {
+                    description: Textval,
+                    sharedImg: "",
+                    video: ""
 
                 },
-                description: payload.description,
-            });
-            dispatch(loadingStateAction.Setloading(false));
-
+                id: editpostid,
+            }
+            updateArticleAPI(payload);
         }
 
-    }
 
-    function postArticle(event) {
-        event.preventDefault();
-
-
-        if (event.target !== event.currentTarget) {
-            return;
-        }
-
-        const payload = {
-            image: imageFile,
-            video: videoFile,
-            description: Textval,
-            user: user,
-            timestamp: Firebase.firestore.Timestamp.now(),
-        };
 
         setTextval("");
         setImageFile("");
         setVideoFile("");
 
 
-        postArticleAPI(payload);
+        // postArticleAPI(payload);
         props.setshowModal(false);
 
 
@@ -161,9 +174,10 @@ function PostalModal(props) {
     return (
         <>
             {props.showModal && <Container>
+                {console.log("runnnnnn")}
                 <Content>
                     <Header>
-                        <h2>Create a post</h2>
+                        <h2>Edit a post</h2>
                         <button onClick={Modalhandler}>
                             <img src="/images/close-icon.svg" alt="" />
                         </button>
@@ -185,9 +199,12 @@ function PostalModal(props) {
                             {Showimage && <UploadImage>
                                 <input type="file" accept="image/gif, image/jpeg, image/png" name="image" id="imageFile" onChange={handleImage} style={{ display: "none" }} />
                                 <p>
-                                    <label htmlFor="imageFile">Click Me To Upload Image</label>
+                                    <label htmlFor="imageFile">Click Me To Upload New Image</label>
                                 </p>
-                                {imageFile && <img src={URL.createObjectURL(imageFile)} alt="" />}
+
+                                {imageFile ? <img src={URL.createObjectURL(imageFile)} alt="" /> : (uplodedimg && <img src={uplodedimg} alt="" />)}
+
+
                             </UploadImage>}
 
                             {Showvideo && <>
@@ -209,10 +226,10 @@ function PostalModal(props) {
                     <ShareCreation>
                         <AttachAsset>
                             <AssetButton >
-                                <img src="/images/share-image.svg" alt="" onClick={() => { setShowimage(true); setShowvideo(false) }} />
+                                <img src="/images/share-image.svg" alt="" onClick={() => { imagebunhandler() }} />
                             </AssetButton>
                             <AssetButton >
-                                <img src="/images/share-video.svg" alt="" onClick={() => { setShowimage(false); setShowvideo(true) }} />
+                                <img src="/images/share-video.svg" alt="" onClick={() => { setShowimage(false); setShowvideo(true); setImageFile(""); }} />
                             </AssetButton>
                         </AttachAsset>
                         <ShareComment>
@@ -222,7 +239,7 @@ function PostalModal(props) {
                             </AssetButton>
                         </ShareComment>
                         <PostButton disabled={!Textval ? true : false} onClick={(event) => postArticle(event)}>
-                            Post
+                            Edit
                         </PostButton>
                     </ShareCreation>
                 </Content>
@@ -231,6 +248,7 @@ function PostalModal(props) {
     )
 }
 
+
 const Container = styled.div`
 	position: fixed;
 	top: 0;
@@ -238,7 +256,7 @@ const Container = styled.div`
 	left: 0;
 	right: 0;
 	z-index: 11;
-	background-color: rgba(0, 0, 0, 0.8);
+	background-color: rgba(0, 0, 0, 0.5);
 	animation: fadeIn 0.5s ease;
 
 `;
@@ -404,4 +422,4 @@ const UploadImage = styled.div`
 `;
 
 
-export default PostalModal;
+export default Editpost;

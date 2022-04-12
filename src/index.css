@@ -20,6 +20,11 @@ div,h1,h2,h3,h4,h5,h6,header,html,i,img,label,li,nav,p,span,ul{
 
 }
 
+button:focus{
+outline: none;
+border: none;
+}
+
 @keyframes fadeIn {
 	from {
 		opacity: 0;

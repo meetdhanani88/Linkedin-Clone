@@ -7,6 +7,7 @@ import Rightside from './Rightside';
 function Home() {
   return (
     <Container>
+
       <Section>
         <h5>
           <a>Hiring in a hurry? - </a>
@@ -17,6 +18,7 @@ function Home() {
         </p>
       </Section>
       <Layout>
+
         <Leftside />
         <Main />
         <Rightside />

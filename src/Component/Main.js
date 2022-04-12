@@ -1,3 +1,4 @@
+
 import React, {
 	useState, useEffect, useRef
 } from 'react';
@@ -8,6 +9,7 @@ import { articleStateAction } from '../store/articleStateSlice';
 import PostalModal from "./PostalModal";
 import ReactPlayer from 'react-player';
 import LikeCommentModal from './LikeCommentModal';
+import Editpost from './Editpost';
 
 
 function Main() {
@@ -15,6 +17,9 @@ function Main() {
 	const [showModal, setshowModal] = useState(false)
 	const [showcmt, setshowcmt] = useState({ id: "", isshow: false });
 	const [clickedpostdata, setclickedpostdata] = useState({ postid: "", postindex: "" });
+	const [showConfirmModal, setshowConfirmModal] = useState({ postid: "", show: false });
+	const [showeditmodal, setshoweditmodal] = useState(false);
+	const [Editpostinfo, setEditpostinfo] = useState({ postid: "", postindex: "" })
 	const comment = useRef();
 
 	//Like&Comments modal  State
@@ -126,45 +131,46 @@ function Main() {
 
 	}
 
-
 	function CommentpostHandeler(event, postid, postindex) {
 		event.preventDefault();
 		let postcomment = comment.current['cmt'].value;
-		// console.log(postcomment);
-		console.log("postid, postindex,postcomment", postid, postindex, postcomment);
+		if (postcomment) {
+			console.log("postid, postindex,postcomment", postid, postindex, postcomment);
 
-		let currentcmt = articles[postindex].comments.count;
-		let whoWhatComment = articles[postindex].comments.whoWhatComment;
+			let currentcmt = articles[postindex].comments.count;
+			let whoWhatComment = articles[postindex].comments.whoWhatComment;
 
-		let newcmt = { name: usedata.displayName, image: usedata.photoURL, cmt: postcomment }
-
-
-		console.log("currentcmt,whoWhatComment,newcmt,articles[postindex]", currentcmt, whoWhatComment, newcmt, articles[postindex]);
+			let newcmt = { name: usedata.displayName, image: usedata.photoURL, cmt: postcomment }
 
 
-		currentcmt++;
-		whoWhatComment = [...whoWhatComment, newcmt];
+			console.log("currentcmt,whoWhatComment,newcmt,articles[postindex]", currentcmt, whoWhatComment, newcmt, articles[postindex]);
 
-		const payload = {
-			update: {
-				comments: {
-					count: currentcmt,
-					whoWhatComment: whoWhatComment,
+
+			currentcmt++;
+			whoWhatComment = [...whoWhatComment, newcmt];
+
+			const payload = {
+				update: {
+					comments: {
+						count: currentcmt,
+						whoWhatComment: whoWhatComment,
+					},
 				},
-			},
-			id: postid,
+				id: postid,
+			}
+			updateArticleAPI(payload);
+
+			comment.current['cmt'].value = "";
+			setclickedpostdata({ postid: postid, postindex: postindex })
+			resetState();
+			setiscmtsection(true);
+			//timeout
+			setTimeout(() => {
+				setshowLikecmtmodal(true);
+			}, 200);
 		}
-		updateArticleAPI(payload);
-
-		comment.current['cmt'].value = "";
-		setclickedpostdata({ postid: postid, postindex: postindex })
-		resetState();
-		setiscmtsection(true);
-		//timeout
-		setTimeout(() => {
-			setshowLikecmtmodal(true);
-		}, 200);
-
+		return;
+		// console.log(postcomment);
 
 	}
 
@@ -223,8 +229,8 @@ function Main() {
 		});
 		// db.collection("articles").doc(postid).delete();
 	}
-	function deletepost(postid) {
-		db.collection("articles").doc(postid).delete();
+	function confirmdelete(postid) {
+		setshowConfirmModal({ postid: postid, show: true });
 		setposthandel((pre) => {
 
 			return (pre?.id == postid) ? {
@@ -237,10 +243,52 @@ function Main() {
 
 		});
 	}
+	function deletepost() {
+		db.collection("articles").doc(showConfirmModal.postid).delete();
+		setshowConfirmModal(false);
+	}
+
+	function editpostmodalhandeler(postid, postindex) {
+		// console.log("postid,postindex,article,user", postid, postindex, articles, usedata);
+
+
+		//Optional Check already hide edit button in jsx
+		if (articles[postindex].actor.description === usedata.email) {
+			setEditpostinfo({ postid: postid, postindex: postindex })
+			setshoweditmodal((pre) => true);
+		}
+
+		else {
+			alert("You can't Edit another user Post")
+		};
+
+	}
 
 
 	return (
+
 		<Container>
+
+			{showConfirmModal?.show && <div className="modal" tabIndex="-1" role="dialog">
+				<div className="modal-dialog" role="document">
+					<div className="modal-content">
+						<div className="modal-header">
+							<h5 className="modal-title">Are you sure? </h5>
+							<button type="button" className="close" data-dismiss="modal" aria-label="Close" onClick={() => setshowConfirmModal(false)}>
+								<span aria-hidden="true">&times;</span>
+							</button>
+						</div>
+						<div className="modal-body">
+							<p> Do you want to delete post?</p>
+						</div>
+
+						<div className="modal-footer">
+							<button type="button" className="btn btn-primary" onClick={() => deletepost()} >Delete</button>
+							<button type="button" className="btn btn-secondary" data-dismiss="modal" onClick={() => setshowConfirmModal(false)}>Cancel</button>
+						</div>
+					</div>
+				</div>
+			</div>}
 
 			{showLikeCmtmodal &&
 				<LikeCommentModal
@@ -250,7 +298,6 @@ function Main() {
 					iscmsection={iscmtsection}
 				/>
 			}
-
 			<ShareBox>
 
 
@@ -307,16 +354,21 @@ function Main() {
 								<img src="/images/ellipses.svg" alt="" />
 
 								{(posthandel?.id === id[index]) && (posthandel?.isshow == true) && <>
-									<div onClick={() => deletepost(id[index])}>
+									{articles[index].actor.description === usedata.email && <div onClick={() => confirmdelete(id[index])}>
 										<span>Delete</span>
-									</div>
-									<div>
+									</div>}
+									{/* check if user allowed to edit post */}
+									{articles[index].actor.description === usedata.email && <div onClick={() => editpostmodalhandeler(id[index], index)}>
 										<span>Edit</span>
-									</div>
+									</div>}
 								</>}
 
 
 							</button>
+
+
+
+
 
 
 						</SharedActor>
@@ -395,14 +447,22 @@ function Main() {
 
 
 			</Content>
-
+			<Editpost
+				setshowModal={setshoweditmodal}
+				showModal={showeditmodal}
+				editpostDetail={Editpostinfo}
+			/>
 			<PostalModal showModal={showModal} setshowModal={setshowModal} ></PostalModal>
-		</Container>
+		</Container >
 	)
 }
 
 const Container = styled.div`
 grid-area: main;
+div.modal{
+	display: block;
+	background-color: rgba(0, 0, 0, 0.8);
+}
 `;
 
 const CommonBox = styled.div`
@@ -558,6 +618,7 @@ const Description = styled.div`
 	overflow: hidden;
 	font-size: 14px;
 	text-align: left;
+	white-space: pre-wrap;
 `;
 
 const SharedImage = styled.div`
@@ -644,7 +705,7 @@ const SocialActions = styled.div`
 const Comment = styled.div`
 display:flex;
 flex-direction: column;
-border-radius: 25px;
+border-radius: 20px;
 box-shadow: 0px 0px 5px 5px #cdcbca;
 width: 90%;
 margin-left: 5%;
@@ -703,24 +764,31 @@ textarea{
 
 `;
 const Postcomment = styled.div`
-
-justify-content: center;
-/* border: 1px solid yellow; */
+justify-content: flex-start;
+/* border: 1px solid red; */
 display: flex;
 background-color: transparent;
+margin-bottom: 10px;
+margin-right: 8px;
+
 button{
- border: none;
-  background-color: inherit;
-  padding: 14px 28px;
-  font-size: 16px;
-  cursor: pointer;
-  display: inline-block;
+	min-width: 60px;
+    padding: 0 16px;
+    border-radius: 20px;
+    background: #0a66c2;
+    color: #fff;
+    font-size: 16px;
+    letter-spacing: 1.1px;
+    border: none;
+    outline: none;
   &:hover{
-	  color: blue;
+	background-color:#004182;
   }
 
 }
 `;
+
+
 
 
 

@@ -264,13 +264,9 @@ const User = styled(NavList)`
   }
   &:hover {
     ${SignOut} {
-       /* align-items: center;
-      display: flex;
-      justify-content: center; */
       display: block;
       cursor: pointer;
       color: red;
-    
     }
   }
 `;
