@@ -10,6 +10,8 @@ import PostalModal from "./PostalModal";
 import ReactPlayer from 'react-player';
 import LikeCommentModal from './LikeCommentModal';
 import Editpost from './Editpost';
+// import InfiniteScroll from 'react-infinite-scroller';
+import InfiniteScroll from 'react-infinite-scroll-component';
 
 
 function Main() {
@@ -21,6 +23,7 @@ function Main() {
 	const [showeditmodal, setshoweditmodal] = useState(false);
 	const [Editpostinfo, setEditpostinfo] = useState({ postid: "", postindex: "" })
 	const comment = useRef();
+	const [lastVisible, setlastVisible] = useState({})
 
 	//Like&Comments modal  State
 	const [showLikeCmtmodal, setshowLikecmtmodal] = useState(false);
@@ -37,37 +40,53 @@ function Main() {
 	const articles = useSelector(state => state.articleState.articles);
 	const id = useSelector(state => state.articleState.ids);
 
+
 	//dispatch
 	const dispatch = useDispatch();
 
-	console.log("usedata", usedata)
+	//Paginations
+	const [limit, setlimit] = useState(5);
+	const [hasMore, sethasMore] = useState(true);
+	const [TotalDoc, setTotalDoc] = useState();
+
+
 	useEffect(() => {
-		// console.log("useeffect run");
-		function getArticlesAPI() {
-
-			let payload;
-			let id;
-			db.collection("articles")
-				.orderBy("actor.date", "desc")
-				.onSnapshot((snapshot) => {
-					// console.log("useeffect run");
-					payload = snapshot.docs.map((doc) => doc.data());
-					payload = JSON.parse(JSON.stringify(payload))
-					console.log(payload);
-					id = snapshot.docs.map((doc) => doc.id);
-					// console.log(id);
-					dispatch(articleStateAction.GET_ARTICLES({ articles: payload, ids: id }))
-					// dispatch(getArticles(payload, id));
-				});
-			// dispatch(setLoading(false));
-
-		}
-		if (articles) {
-			getArticlesAPI();
-		}
-
-
+		db.collection("articles").get().then(function (querySnapshot) {
+			setTotalDoc(querySnapshot.docs.length);
+			// console.log("length", querySnapshot.docs.length);
+		});
 	}, [])
+	useEffect(() => {
+		getArticlesAPI();
+	}, [limit])
+
+
+	function getArticlesAPI() {
+
+		let payload;
+		let id;
+		db.collection("articles")
+			.orderBy("actor.date", "desc")
+			.limit(limit)
+			.onSnapshot((snapshot) => {
+				// console.log("useeffect run");
+				var size = snapshot.size
+				// console.log(size);
+				// var lastVisibl = snapshot.docs[snapshot.docs.length - 1];
+				// setlastVisible(lastVisibl)
+
+				payload = snapshot.docs.map((doc) => doc.data());
+				payload = JSON.parse(JSON.stringify(payload))
+				// console.log(payload);
+				id = snapshot.docs.map((doc) => doc.id);
+				// console.log(id);
+				dispatch(articleStateAction.GET_ARTICLES({ articles: payload, ids: id }))
+				// dispatch(getArticles(payload, id));
+			});
+		// dispatch(setLoading(false));
+
+	}
+
 
 	function resetState() {
 		setisLikesection(false);
@@ -187,11 +206,9 @@ function Main() {
 				isshow: true
 			}
 
-
 		});
 
 	}
-
 
 	function likecmtmodalhandler(event, postid, postindex, setsection) {
 		event.preventDefault();
@@ -208,7 +225,6 @@ function Main() {
 		setsection(true);
 
 	}
-
 
 	function updatepost(postid) {
 		setposthandel((pre) => {
@@ -229,6 +245,7 @@ function Main() {
 		});
 		// db.collection("articles").doc(postid).delete();
 	}
+
 	function confirmdelete(postid) {
 		setshowConfirmModal({ postid: postid, show: true });
 		setposthandel((pre) => {
@@ -243,6 +260,7 @@ function Main() {
 
 		});
 	}
+
 	function deletepost() {
 		db.collection("articles").doc(showConfirmModal.postid).delete();
 		setshowConfirmModal(false);
@@ -262,6 +280,15 @@ function Main() {
 			alert("You can't Edit another user Post")
 		};
 
+	}
+
+	function loadmore() {
+		// e.preventDefault();
+		// console.log("triggger");
+		if (TotalDoc <= limit) {
+			sethasMore(false);
+		}
+		setlimit((pre) => pre + 2);
 	}
 
 
@@ -332,128 +359,146 @@ function Main() {
 			<Content>
 				{loading && <img src="/images/spin.gif" alt="" />}
 
-				{articles.map((article, index) => {
-					//Date Object TO Real Date
-					const date = (new Date(article.actor.date.seconds * 1000 + article.actor.date.nanoseconds / 1000000)).toLocaleDateString();
-					// Dynamic Like button class
-					const btnclass = `${article.likes.whoLiked.findIndex((ele) =>
-						ele.email === usedata.email
-					) >= 0 ? "active" : null}`
 
-					return (<Article key={id[index]}>
-						<SharedActor>
-							<a>
-								<img src={article.actor.image} alt="" />
-								<div>
-									<span>{article.actor.title}</span>
-									<span>{article.actor.description}</span>
-									<span>{date}</span>
-								</div>
-							</a>
-							<button onClick={() => updatepost(id[index])}>
-								<img src="/images/ellipses.svg" alt="" />
+				<InfiniteScroll
+					dataLength={articles.length} //This is important field to render the next data
+					next={loadmore}
+					hasMore={hasMore}
+					loader={<img src="/images/spin.gif" alt="" height={"30"} width="30" />}
+					endMessage={
+						<p style={{ textAlign: 'center' }}>
+							<b>Yay! You have seen it all</b>
+						</p>
+					}
 
-								{(posthandel?.id === id[index]) && (posthandel?.isshow == true) && <>
-									{articles[index].actor.description === usedata.email && <div onClick={() => confirmdelete(id[index])}>
-										<span>Delete</span>
-									</div>}
-									{/* check if user allowed to edit post */}
-									{articles[index].actor.description === usedata.email && <div onClick={() => editpostmodalhandeler(id[index], index)}>
-										<span>Edit</span>
-									</div>}
-								</>}
+				>
+
+					{articles.map((article, index) => {
+						//Date Object TO Real Date
+						const date = (new Date(article.actor.date.seconds * 1000 + article.actor.date.nanoseconds / 1000000)).toLocaleDateString();
+						// Dynamic Like button class
+						const btnclass = `${article.likes.whoLiked.findIndex((ele) =>
+							ele.email === usedata.email
+						) >= 0 ? "active" : null}`
+
+						return (<Article key={id[index]}>
+							<SharedActor>
+								<a>
+									<img src={article.actor.image} alt="" />
+									<div>
+										<span>{article.actor.title}</span>
+										<span>{article.actor.description}</span>
+										<span>{date}</span>
+									</div>
+								</a>
+								<button onClick={() => updatepost(id[index])}>
+									<img src="/images/ellipses.svg" alt="" />
+
+									{(posthandel?.id === id[index]) && (posthandel?.isshow == true) && <>
+										{articles[index].actor.description === usedata.email && <div onClick={() => confirmdelete(id[index])}>
+											<span>Delete</span>
+										</div>}
+										{/* check if user allowed to edit post */}
+										{articles[index].actor.description === usedata.email && <div onClick={() => editpostmodalhandeler(id[index], index)}>
+											<span>Edit</span>
+										</div>}
+									</>}
 
 
-							</button>
-
-
-
-
-
-
-						</SharedActor>
-						<Description>{article.description}</Description>
-
-						{(article?.sharedImg || article.video) && <SharedImage>
-							<a>
-								{(article?.sharedImg && !article.video) ? <img src={article?.sharedImg} alt="" /> : <ReactPlayer width={"100%"} url={article.video}></ReactPlayer>}
-							</a>
-						</SharedImage>}
-
-						<SocialCount >
-							<li onClick={(e) => likecmtmodalhandler(e, id[index], index, setisLikesection)}>
-								<button>
-									<img src="https://static-exp1.licdn.com/sc/h/d310t2g24pvdy4pt1jkedo4yb" alt="like" />
-									<span>{article.likes.count} Likes</span>
-								</button>
-							</li>
-							<li onClick={(e) => likecmtmodalhandler(e, id[index], index, setiscmtsection)}>
-								<button>
-									<img src="https://img.icons8.com/cute-clipart/16/000000/comments.png" />
-									<span>{article.comments.count} Comments</span>
 								</button>
 
-							</li>
-						</SocialCount>
-
-						<SocialActions>
-							<button onClick={(event) => likehandeler(event, id[index], index)} className={btnclass}>
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" data-supported-dps="24x24" fill="rgba(0, 0, 0, 0.6)" width="24" height="24" focusable="false">
-									<path d="M19.46 11l-3.91-3.91a7 7 0 01-1.69-2.74l-.49-1.47A2.76 2.76 0 0010.76 1 2.75 2.75 0 008 3.74v1.12a9.19 9.19 0 00.46 2.85L8.89 9H4.12A2.12 2.12 0 002 11.12a2.16 2.16 0 00.92 1.76A2.11 2.11 0 002 14.62a2.14 2.14 0 001.28 2 2 2 0 00-.28 1 2.12 2.12 0 002 2.12v.14A2.12 2.12 0 007.12 22h7.49a8.08 8.08 0 003.58-.84l.31-.16H21V11zM19 19h-1l-.73.37a6.14 6.14 0 01-2.69.63H7.72a1 1 0 01-1-.72l-.25-.87-.85-.41A1 1 0 015 17l.17-1-.76-.74A1 1 0 014.27 14l.66-1.09-.73-1.1a.49.49 0 01.08-.7.48.48 0 01.34-.11h7.05l-1.31-3.92A7 7 0 0110 4.86V3.75a.77.77 0 01.75-.75.75.75 0 01.71.51L12 5a9 9 0 002.13 3.5l4.5 4.5H19z"></path>
-								</svg>
-								<span>Like</span>
-							</button>
-							<button onClick={(e) => commenthandeler(e, id[index], index)}>
-								<img src="/images/comment-icon.svg" alt="" />
-								<span>Comment</span>
-							</button>
-							<button>
-								<img src="/images/share-icon.svg" alt="" />
-								<span>Share</span>
-							</button>
-							<button>
-								<img src="/images/send-icon.svg" alt="" />
-								<span>Send</span>
-							</button>
-						</SocialActions>
-
-						{/* comments */}
-
-						{(showcmt?.id === id[index]) && (showcmt?.isshow == true) && <Comment>
-							<Writecomment>
-								<form onSubmit={(event) => CommentpostHandeler(event, id[index], index)} ref={comment}>
-									<Commnetinput>
-										<Commentimg>
-											<img src={usedata.photoURL} alt="" />
-										</Commentimg>
-
-										<textarea placeholder='Write any comment' autoFocus={true} name={'cmt'} ></textarea>
-
-										<Postcomment>
-											<button type='submit'>Post</button>
-										</Postcomment>
-
-									</Commnetinput>
-								</form>
 
 
-							</Writecomment>
-
-						</Comment>}
 
 
-					</Article>)
-				})}
+
+							</SharedActor>
+							<Description>{article.description}</Description>
+
+							{(article?.sharedImg || article.video) && <SharedImage>
+								<a>
+									{(article?.sharedImg && !article.video) ? <img src={article?.sharedImg} alt="" /> : <ReactPlayer width={"100%"} url={article.video}></ReactPlayer>}
+								</a>
+							</SharedImage>}
+
+							<SocialCount >
+								<li onClick={(e) => likecmtmodalhandler(e, id[index], index, setisLikesection)}>
+									<button>
+										<img src="https://static-exp1.licdn.com/sc/h/d310t2g24pvdy4pt1jkedo4yb" alt="like" />
+										<span>{article.likes.count} Likes</span>
+									</button>
+								</li>
+								<li onClick={(e) => likecmtmodalhandler(e, id[index], index, setiscmtsection)}>
+									<button>
+										<img src="https://img.icons8.com/cute-clipart/16/000000/comments.png" />
+										<span>{article.comments.count} Comments</span>
+									</button>
+
+								</li>
+							</SocialCount>
+
+							<SocialActions>
+								<button onClick={(event) => likehandeler(event, id[index], index)} className={btnclass}>
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" data-supported-dps="24x24" fill="rgba(0, 0, 0, 0.6)" width="24" height="24" focusable="false">
+										<path d="M19.46 11l-3.91-3.91a7 7 0 01-1.69-2.74l-.49-1.47A2.76 2.76 0 0010.76 1 2.75 2.75 0 008 3.74v1.12a9.19 9.19 0 00.46 2.85L8.89 9H4.12A2.12 2.12 0 002 11.12a2.16 2.16 0 00.92 1.76A2.11 2.11 0 002 14.62a2.14 2.14 0 001.28 2 2 2 0 00-.28 1 2.12 2.12 0 002 2.12v.14A2.12 2.12 0 007.12 22h7.49a8.08 8.08 0 003.58-.84l.31-.16H21V11zM19 19h-1l-.73.37a6.14 6.14 0 01-2.69.63H7.72a1 1 0 01-1-.72l-.25-.87-.85-.41A1 1 0 015 17l.17-1-.76-.74A1 1 0 014.27 14l.66-1.09-.73-1.1a.49.49 0 01.08-.7.48.48 0 01.34-.11h7.05l-1.31-3.92A7 7 0 0110 4.86V3.75a.77.77 0 01.75-.75.75.75 0 01.71.51L12 5a9 9 0 002.13 3.5l4.5 4.5H19z"></path>
+									</svg>
+									<span>Like</span>
+								</button>
+								<button onClick={(e) => commenthandeler(e, id[index], index)}>
+									<img src="/images/comment-icon.svg" alt="" />
+									<span>Comment</span>
+								</button>
+								<button>
+									<img src="/images/share-icon.svg" alt="" />
+									<span>Share</span>
+								</button>
+								<button>
+									<img src="/images/send-icon.svg" alt="" />
+									<span>Send</span>
+								</button>
+							</SocialActions>
+
+							{/* comments */}
+
+							{(showcmt?.id === id[index]) && (showcmt?.isshow == true) && <Comment>
+								<Writecomment>
+									<form onSubmit={(event) => CommentpostHandeler(event, id[index], index)} ref={comment}>
+										<Commnetinput>
+											<Commentimg>
+												<img src={usedata.photoURL} alt="" />
+											</Commentimg>
+
+											<textarea placeholder='Write any comment' autoFocus={true} name={'cmt'} ></textarea>
+
+											<Postcomment>
+												<button type='submit'>Post</button>
+											</Postcomment>
+
+										</Commnetinput>
+									</form>
+
+
+								</Writecomment>
+
+							</Comment>}
+
+
+						</Article>)
+					})}
+
+
+				</InfiniteScroll>
 
 
 			</Content>
+
 			<Editpost
 				setshowModal={setshoweditmodal}
 				showModal={showeditmodal}
 				editpostDetail={Editpostinfo}
 			/>
 			<PostalModal showModal={showModal} setshowModal={setshowModal} ></PostalModal>
-		</Container >
+		</Container>
 	)
 }
 
@@ -527,6 +572,7 @@ const ShareBox = styled(CommonBox)`
 `;
 
 const Content = styled.div`
+overflow: auto;
 	text-align: center;
 	& > img {
 		width: 30px;

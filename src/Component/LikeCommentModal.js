@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import styled from "styled-components";
 import { useDispatch, useSelector } from "react-redux";
+import InfiniteScroll from 'react-infinite-scroller';
 
 function LikeCommentModal({ setshowLikecmtmodal, clickedpostdata, isLiksection, iscmsection }) {
 	const articles = useSelector(state => state.articleState.articles);
@@ -16,11 +17,48 @@ function LikeCommentModal({ setshowLikecmtmodal, clickedpostdata, isLiksection, 
 
 	// console.log("wholike,whoWhatcomment", wholike, whoWhatcomment)
 
+	let LimitPerPage = 5;
+	let startingPage = 1;
+
+	const [items, setItems] = useState([]);
+	const [hasMore, sethasMore] = useState(true);
+	const [page, setpage] = useState(1);
+
+
+	useEffect(() => {
+		const PerPageItems = whoWhatComment.slice((startingPage * LimitPerPage) - LimitPerPage, startingPage * LimitPerPage)
+		setItems(PerPageItems);
+		console.log("ododo");
+	}, [])
+
 	function resetallstate() {
 		setshowLikecmtmodal(false);
 		setisLikesection(false);
 		setiscmtsection(false)
 	}
+
+	function handelload(e) {
+		// const selectedkey = clickedkey.selected + 1;
+		console.log("trigger");
+		const selectedkey = page;
+		const PerPageItems = whoWhatComment.slice((selectedkey * LimitPerPage) - LimitPerPage, selectedkey * LimitPerPage)
+		setItems((pre) => {
+			// console.log(pre)
+			// console.log(PerPageItems);
+			return [...pre, ...PerPageItems]
+		});
+
+		if (PerPageItems.length === 0 || PerPageItems.length < LimitPerPage) {
+			sethasMore(false);
+			console.log("no page");
+		}
+
+		setpage(page + 1);
+
+
+
+	}
+
 	return (
 		<Container>
 			<Content>
@@ -82,20 +120,27 @@ function LikeCommentModal({ setshowLikecmtmodal, clickedpostdata, isLiksection, 
 						</li>
 					</SocialCount>
 
-					{whoWhatComment.map((item, index) => {
+					<InfiniteScroll
+						loadMore={handelload}
+						hasMore={hasMore}
+						loader={<div className="loader" key={0}>Loading ...</div>}
+						useWindow={false}
+					>
+						{items.map((item, index) => {
 
-						return (<SharedActorComment key={index}>
-							<a>
-								<img src={item.image} alt="" />
-								<div>
-									<span>{item.name}</span>
-									<span>{item.cmt}</span>
-								</div>
-							</a>
+							return (<SharedActorComment key={index}>
+								<a>
+									<img src={item.image} alt="" />
+									<div>
+										<span>{item.name}</span>
+										<span>{item.cmt}</span>
+									</div>
+								</a>
 
-						</SharedActorComment>)
+							</SharedActorComment>)
 
-					})}
+						})}
+					</InfiniteScroll>
 
 				</Commentsection>}
 
@@ -293,12 +338,14 @@ a{
 					font-size: 16px;
 					color: rgba(0, 0, 0, 0.7);
 					font-weight: 300;
-
+					white-space: pre-wrap;
 				    word-wrap: break-word;
 				}
 		}
 	}
 }`;
 
-const Commentsection = styled.div``;
+const Commentsection = styled.div`
+overflow: auto;
+`;
 export default LikeCommentModal

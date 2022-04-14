@@ -12,21 +12,21 @@ function Editpost(props) {
     const articles = useSelector(state => state.articleState.articles);
 
     const [Textval, setTextval] = useState("");
-    const [imageFile, setImageFile] = useState("");
+    const [imageFile, setImageFile] = useState("");//for image from Local storage
     const [videoFile, setVideoFile] = useState("");
-    const [uplodedimg, setuploadedimg] = useState("")
+    const [uplodedimg, setuploadedimg] = useState("")//for image from firebase url
     const [Showimage, setShowimage] = useState(false);
     const [Showvideo, setShowvideo] = useState(false);
 
     // console.log(editposttext);
-    console.log("Showimage,Showvideo,props.showModal", Showimage, Showvideo, props.showModal);
+    // console.log("Showimage,Showvideo,props.showModal", Showimage, Showvideo, props.showModal);
 
 
     const editposttext = articles[props.editpostDetail.postindex]?.description;
     const editpostvideo = articles[props.editpostDetail.postindex]?.video;
     const editpostimage = articles[props.editpostDetail.postindex]?.sharedImg;
     const editpostid = props.editpostDetail.postid;
-    console.log("editpostid", editpostid);
+    // console.log("editpostid", editpostid);
 
 
     useEffect(() => {
@@ -69,9 +69,9 @@ function Editpost(props) {
     }
     function Modalhandler() {
         props.setshowModal(false);
-        setTextval("");
-        setImageFile("");
-        setVideoFile("");
+        // setTextval("");
+        // setImageFile("");
+        // setVideoFile("");
 
     }
     function handleImage(event) {
@@ -83,9 +83,6 @@ function Editpost(props) {
         }
         setImageFile(image);
     }
-
-
-
     function postArticle(event) {
         event.preventDefault();
 
@@ -414,9 +411,9 @@ const UploadImage = styled.div`
         margin-top: 5px;
     }
     label{
-        color: red;
+        color: #0a66c2;
         &:hover{
-            color: blue;
+            color: #004182;
         }
     }
 `;

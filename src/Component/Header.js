@@ -112,6 +112,9 @@ function Header() {
             </Work>
           </NavListWrap>
         </Nav>
+        <Signoutbtn onClick={signout}>
+          <button>Log Out</button>
+        </Signoutbtn>
       </Content>
     </Container>
   )
@@ -134,6 +137,7 @@ const Content = styled.div`
   margin: 0 auto;
   min-height: 100%;
   max-width: 1128px;
+  overflow: auto;
   `;
 const Logo = styled.span`
   margin-right: 8px;
@@ -143,6 +147,7 @@ const Search = styled.div`
 opacity: 1;
   flex-grow: 1;
   position: relative;
+  margin-right: 10px;
   & > div {
     max-width: 280px;
     input {
@@ -188,8 +193,9 @@ const Nav = styled.nav`
 `;
 const NavListWrap = styled.ul`
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   list-style-type: none;
+  justify-content: space-evenly;
   .active {
     span:after {
       content: "";
@@ -207,6 +213,7 @@ const NavListWrap = styled.ul`
 const NavList = styled.li`
   display: flex;
   align-items: center;
+ 
   a {
     align-items: center;
     background: transparent;
@@ -226,7 +233,7 @@ const NavList = styled.li`
       align-items: center;
     }
     @media (max-width: 768px) {
-      min-width: 70px;
+      min-width: 42px;
     }
   }
   &:hover,
@@ -241,15 +248,25 @@ const NavList = styled.li`
 
 const SignOut = styled.div`
   position: absolute;
-  top: 45px;
+  display: flex;
+  justify-content: center;
+  top: 47px;
   background: white;
   border-radius: 0 0 5px 5px;
-  width: 100px;
-  height: 40px;
+  width: 80px;
+  height: 30px;
   font-size: 16px;
   transition-duration: 167ms;
-  text-align: center;
+  /* text-align: center; */
   display: none;
+  box-shadow: 0px 0px 3px 3px #cdcbca;
+  a{
+    text-align: center;
+    margin-top: -10px;
+    font-weight: 500;
+
+  }
+
 `;
 const User = styled(NavList)`
 
@@ -265,13 +282,46 @@ const User = styled(NavList)`
   &:hover {
     ${SignOut} {
       display: block;
-      cursor: pointer;
+      cursor: pointer;  
       color: red;
+
+      @media (max-width: 768px) {
+      display: none;
+    }
     }
   }
 `;
 const Work = styled(User)`
   border-left: 1px solid rgba(0, 0, 0, 0.08);
 `;
+
+const Signoutbtn = styled.div`
+display: flex;
+min-width: 72px;
+overflow-y: auto;
+
+button{
+  /* max-width: 200px;
+  min-width: 80px; */
+	padding: 4px 9px;
+  cursor: pointer;
+	border-radius: 20px;
+	background: #0a66c2;
+  text-align: center;
+	color: #fff;
+	font-size: 12px;
+	letter-spacing: 1.1px;
+	border: none;
+	outline: none;
+  display: none;
+	&:hover {
+		background: #004182;
+	}
+  @media (max-width: 768px) {
+      display: block;
+    }
+}
+`
+  ;
 
 export default Header;

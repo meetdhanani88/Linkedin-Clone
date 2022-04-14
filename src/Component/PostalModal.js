@@ -396,9 +396,9 @@ const UploadImage = styled.div`
         margin-top: 5px;
     }
     label{
-        color: red;
+        color: #0a66c2;
         &:hover{
-            color: blue;
+            color: #004182;
         }
     }
 `;
