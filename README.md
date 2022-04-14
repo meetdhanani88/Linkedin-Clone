@@ -21,4 +21,5 @@ https://linkdin-clone-58377.web.app/home
 - Realtime Edit & Delete Post
 - Youtube video uploading & Image uploading
 - Fast & Secured via firebase authentication
+- Infinite Pagination For Fast Rendering without interrupting User-Experience
 
