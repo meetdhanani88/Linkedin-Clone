@@ -572,7 +572,7 @@ const ShareBox = styled(CommonBox)`
 `;
 
 const Content = styled.div`
-overflow: auto;
+/* overflow: auto; */
 	text-align: center;
 	& > img {
 		width: 30px;
@@ -584,6 +584,7 @@ const Article = styled(CommonBox)`
 	padding-bottom: 20px;
 	margin: 0 0 8px;
 	overflow: visible;
+	border: 1px solid rgba(0,0,0,0.20);
 `;
 
 const SharedActor = styled.div`
