@@ -23,7 +23,7 @@ function Main() {
 	const [showeditmodal, setshoweditmodal] = useState(false);
 	const [Editpostinfo, setEditpostinfo] = useState({ postid: "", postindex: "" })
 	const comment = useRef();
-	const [lastVisible, setlastVisible] = useState({})
+	// const [lastVisible, setlastVisible] = useState({})
 
 	//Like&Comments modal  State
 	const [showLikeCmtmodal, setshowLikecmtmodal] = useState(false);
@@ -31,7 +31,6 @@ function Main() {
 	const [iscmtsection, setiscmtsection] = useState(false);
 
 	//poststate 
-
 	const [posthandel, setposthandel] = useState({ id: "", isshow: false });
 
 	//Redux Store Values
