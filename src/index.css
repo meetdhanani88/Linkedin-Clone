@@ -11,7 +11,7 @@ body{
 }
 
 
-div,h1,h2,h3,h4,h5,h6,header,html,i,img,label,li,nav,p,span,ul,section,a{
+div,h1,h2,h3,h4,h5,h6,header,html,i,img,label,li,nav,p,span,ul,a{
     margin: 0;
     padding: 0;
     border: 0;
@@ -19,8 +19,11 @@ div,h1,h2,h3,h4,h5,h6,header,html,i,img,label,li,nav,p,span,ul,section,a{
     background: transparent;
     vertical-align: baseline;
     font-size: 100%;
-    line-height: normal;
 
+
+}
+section{
+    line-height: normal;
 }
 
 button:focus{
