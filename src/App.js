@@ -7,6 +7,7 @@ import Home from './Component/Home';
 import { useDispatch, useSelector } from "react-redux";
 import { userStateAction } from "./store/userStateSlice"
 import { useEffect } from 'react';
+import Chat from "./Component/chat/Chat";
 
 function App() {
   const dispatch = useDispatch();
@@ -35,12 +36,15 @@ function App() {
           {usedata?.uid &&
             <Route path='/home' element={
               <>
-                <Header></Header>
+                <Header active="activeHome"></Header>
                 <Home></Home>
+                {/* <Chat></Chat> */}
+
               </>
             } />
 
           }
+          <Route path='/chat' element={<Chat />} />
 
           <Route path="*" element={<Navigate to="/" />} />
 

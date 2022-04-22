@@ -2,13 +2,14 @@ import React, { useEffect } from 'react'
 import styled from 'styled-components';
 import { useDispatch, useSelector } from "react-redux";
 import db, { auth, provider, storage } from "../firebase";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, NavLink, Navigate } from "react-router-dom";
 import userStateSlice from '../store/userStateSlice';
 
-function Header() {
+function Header({ active }) {
   const user = useSelector(state => state.userState.user);
   const dispatch = useDispatch()
   const navigation = useNavigate()
+
 
 
 
@@ -33,6 +34,10 @@ function Header() {
 
 
   }
+  function Goto(e, place) {
+    e.preventDefault();
+    navigation(place)
+  }
   return (
 
     <Container>
@@ -54,13 +59,17 @@ function Header() {
 
           <NavListWrap>{/*ul*/}
 
-            <NavList className="active">  {/*li */}
+            <NavList onClick={(e) => Goto(e, "/home")} className={`${active == "activeHome" ? "active" : ""}`}>  {/*li */}
               <a href="/">
                 <img src="/images/nav-home.svg" alt="" />
                 <span>Home</span>
               </a>
             </NavList>
             <NavList>
+
+              {/* abcdefa b scgs */}
+
+
               <a href="/">
                 <img src="/images/nav-network.svg" alt="" />
                 <span>My Network</span>
@@ -74,15 +83,15 @@ function Header() {
               </a>
             </NavList>
 
-            <NavList>
-              <a href="/">
+            <NavList onClick={(e) => Goto(e, "/chat")} className={`${active == "activeHeader" ? "active" : ""}`}>
+              <a href="">
                 <img src="/images/nav-messaging.svg" alt="" />
                 <span>Messaging</span>
               </a>
             </NavList>
 
             <NavList>
-              <a href="/">
+              <a href="/" >
                 <img src="/images/nav-notifications.svg" alt="" />
                 <span>Notifications</span>
               </a>
@@ -116,7 +125,7 @@ function Header() {
           <button>Log Out</button>
         </Signoutbtn>
       </Content>
-    </Container>
+    </Container >
   )
 }
 
